@@ -1,0 +1,22 @@
+
+target/
+dbt_packages/
+logs/
+profiles.yml
+
+# secrets / env
+.env
+.env.*
+*.pem
+*.key
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+.idea/
+
+# python (if you use any local venv/scripts alongside dbt)
+__pycache__/
+*.pyc
+.venv/
+venv/
