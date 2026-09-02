@@ -1,0 +1,85 @@
+version: 2
+
+semantic_models:
+
+#### bookings ####
+  - name: bookings
+    description: "One row per booking, the core Marketplace fact table."
+    model: ref('int_bookings')
+    defaults:
+      agg_time_dimension: requested_at
+
+    entities:
+      - name: booking_id
+        type: primary
+      - name: driver_id
+        type: foreign
+
+    dimensions:
+      - name: requested_at
+        type: time
+        type_params:
+          time_granularity: day
+      - name: booking_status
+        type: categorical
+      - name: is_fare_outlier
+        type: categorical
+      - name: is_gmv_outlier
+        type: categorical
+
+    measures:
+      - name: total_bookings
+        agg: count
+        expr: booking_id
+      - name: successful_bookings
+        agg: count
+        expr: booking_id
+        agg_time_dimension: requested_at
+        create_metric: false
+      - name: bookings_with_driver
+        agg: count
+        expr: driver_id
+      - name: sum_estimated_fare
+        agg: sum
+        expr: estimated_route_fare_eur
+      - name: sum_gmv
+        agg: sum
+        expr: gmv
+
+##### offers ####
+  - name: offers
+    description: "One row per offer sent to a driver."
+    model: ref('int_offers')
+    defaults:
+      agg_time_dimension: offered_at
+
+    entities:
+      - name: offer_id
+        type: primary
+      - name: driver_id
+        type: foreign
+      - name: booking_id
+        type: foreign
+
+    dimensions:
+      - name: offered_at
+        type: time
+        type_params:
+          time_granularity: day
+      - name: offer_state
+        type: categorical
+
+    measures:
+      - name: total_offers
+        agg: count
+        expr: offer_id
+      - name: accepted_offers
+        agg: count
+        expr: offer_id
+        create_metric: false
+      - name: distinct_drivers_offered
+        agg: count_distinct
+        expr: driver_id
+      - name: distinct_drivers_accepted
+        agg: count_distinct
+        expr: driver_id

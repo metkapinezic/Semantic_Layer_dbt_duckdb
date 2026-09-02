@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: freenow_raw
+    schema: freenow
+    tables:
+      - name: bookings
+        identifier: raw_bookings
+      - name: offers
+        identifier: raw_offers
+      - name: drivers
+        identifier: raw_drivers
+      - name: order_financials
+        identifier: raw_order_financials

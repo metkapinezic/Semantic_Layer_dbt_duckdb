@@ -1,0 +1,220 @@
+
+# Ownership & RACI — enforced by governance/check_metric_governance.py
+# meta.tier definitions:
+#   1 = high-stakes (exec/board-reported or cross-domain metric).
+#       Requires Responsible + Accountable owners, mandatory quality
+#       tests, and sign-off from all affected teams before changes.
+#   2 = team-internal, single-domain metric.
+#       Requires an owner and documentation, no cross-team sign-off.
+
+version: 2
+
+metrics:
+
+#### bookings ####
+  - name: total_requests
+    description: >
+      Authoritative definition: count of distinct bookings (a "request" is a
+      passenger action). Distinct from total_offers_sent, which counts driver-facing
+      events and can be many-to-one with bookings.
+    type: simple
+    label: "Total Requests"
+    type_params:
+      measure: total_bookings
+    meta:                       
+      owner: marketplace_team
+      tier: 1
+      responsible: marketplace-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+
+
+  - name: gmv
+    description: >
+      Gross Merchandise Value
+      Authoritative source: Finance's order_financials.gmv (actual, post-trip value),
+      not Marketplace's pre-trip fare estimate. This is the cross-domain metric —
+      Marketplace dashboards should consume this definition rather than independently
+      estimating GMV from estimated_route_fare.
+    type: simple
+    label: "GMV"
+    type_params:
+      measure: sum_gmv
+    filter: "{{ Dimension('booking_id__is_gmv_outlier') }} is not true"
+    meta:
+      owner: finance_team
+      tier: 1
+      responsible: finance-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+      consulted: marketplace_team
+      informed: exec-reporting
+
+  - name: bookings_with_driver
+    description: "Bookings where a driver was assigned (accepted offer or booking-level driver_id)."
+    type: simple
+    label: "Bookings With Driver"
+    type_params:
+      measure: bookings_with_driver
+    meta:
+      owner: marketplace_team
+      tier: 1
+      responsible: marketplace-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+
+  - name: successful_bookings
+    description: "Count of bookings with status = SUCCESS."
+    type: simple
+    label: "Successful Bookings"
+    type_params:
+      measure: total_bookings
+    filter: "{{ Dimension('booking_id__booking_status') }} = 'SUCCESS'"
+    meta:
+      owner: marketplace_team
+      tier: 1
+      responsible: marketplace-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+
+  - name: success_rate
+    description: >
+      Authoritative definition, consolidating Marketplace's daily-Tableau and
+      analyst-notebook versions (which were mathematically equivalent, just
+      aggregated differently). Defined at the booking level: successful bookings
+      / total bookings.
+    type: ratio
+    label: "Success Rate"
+    type_params:
+      numerator: successful_bookings
+      denominator: total_requests
+    meta:
+      owner: supply_team
+      tier: 2
+      responsible: supply-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+
+  - name: non_successful_bookings
+    description: "Count of bookings with status != SUCCESS (cancellations of any kind)."
+    type: simple
+    label: "Non-Successful Bookings"
+    type_params:
+      measure: total_bookings
+    filter: "{{ Dimension('booking_id__booking_status') }} != 'SUCCESS'"
+    meta:
+      owner: marketplace_team
+      tier: 1
+      responsible: marketplace-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+
+  - name: cancellation_rate
+    description: >
+      1 - success_rate, matching Marketplace's existing definition. Modeled as a
+      ratio (non-successful bookings / total) rather than derived arithmetic, for
+      simplicity.
+    type: ratio
+    label: "Cancellation Rate"
+    type_params:
+      numerator: non_successful_bookings
+      denominator: total_requests
+    meta:
+      owner: supply_team
+      tier: 2
+      responsible: supply-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+
+
+  - name: booking_acceptance_rate ## divided from acceptance rate
+    description: >
+      Authoritative Marketplace definition (renamed from ambiguous "Acceptance
+      Rate" to disambiguate from Supply's offer_acceptance_rate, a different
+      metric with the same historical name). Measures: did this booking get
+      a driver, at the booking level.
+    type: ratio
+    label: "Booking Acceptance Rate"
+    type_params:
+      numerator: bookings_with_driver
+      denominator: total_requests
+    meta:
+      owner: marketplace_team
+      tier: 1
+      responsible: marketplace-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+
+#### offers ####
+
+  - name: total_offers_sent
+    description: "Count of all offers sent to drivers, regardless of outcome."
+    type: simple
+    label: "Total Offers Sent"
+    type_params:
+      measure: total_offers
+    meta:
+      owner: finance_team
+      tier: 1
+      responsible: finance-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+      consulted: marketplace_team
+      informed: exec-reporting
+
+  - name: accepted_offers_count
+    description: "Count of offers with state = ACCEPTED."
+    type: simple
+    label: "Accepted Offers"
+    type_params:
+      measure: total_offers
+    filter: "{{ Dimension('offer_id__offer_state') }} = 'ACCEPTED'"
+    meta:
+      owner: finance_team
+      tier: 1
+      responsible: finance-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+      consulted: marketplace_team
+      informed: exec-reporting
+
+  - name: offer_acceptance_rate ## divided from acceptance rate
+    description: >
+      Authoritative Supply definition (renamed from ambiguous "Acceptance Rate" to
+      disambiguate from Marketplace's booking_acceptance_rate). Measures: how often
+      drivers accept when offered a ride, at the offer level.
+    type: ratio
+    label: "Offer Acceptance Rate"
+    type_params:
+      numerator: accepted_offers_count
+      denominator: total_offers_sent
+    meta:
+      owner: finance_team
+      tier: 1
+      responsible: finance-analytics@freenow.com
+      accountable: head-of-data-enablement@freenow.com
+      consulted: marketplace_team
+      informed: exec-reporting
+
+  - name: active_drivers
+    description: >
+      Authoritative definition, matching Supply's Dashboard A (broader definition):
+      any driver who received at least one offer, regardless of outcome.
+    type: simple
+    label: "Active Drivers"
+    type_params:
+      measure: distinct_drivers_offered
+    meta:
+      owner: finance_team
+      tier: 1
+      responsible: finance-analytics@freenow.com
+      accountable: "head-of-data-enablement@freenow.com
+      consulted: marketplace_team
+      informed: exec-reporting
+
+  - name: accepting_drivers
+    description: >
+      Renamed from Supply's Dashboard B "Active Drivers" to disambiguate — this
+      measures driver acceptance behavior, not activity/participation.
+    type: simple
+    label: "Accepting Drivers"
+    type_params:
+      measure: distinct_drivers_accepted
+    filter: "{{ Dimension('offer_id__offer_state') }} = 'ACCEPTED'"
+    meta:
+      owner: finance_team
+      tier: 1
+      responsible: finance-analytics@freenow.com
+      accountable: "head-of-data-enablement@freenow.com
+      consulted: marketplace_team
+      informed: exec-reporting
