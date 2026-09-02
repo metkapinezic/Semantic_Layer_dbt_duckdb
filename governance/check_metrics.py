@@ -4,7 +4,7 @@
   ## 2. Every metric must have an owner (meta.owner).
   ##3. No duplicate metric names across YAML files.
 
-## Run: python governance/check_metric_governance.py
+## Run: python governance/check_metrics.py
 ##Exit code 0 = pass, 1 = violations found 
 
 ## runs as github action step

@@ -1,5 +1,5 @@
 
-# Ownership & RACI — enforced by governance/check_metric_governance.py
+# Ownership & RACI — enforced by governance/check_metrics.py
 # meta.tier definitions:
 #   1 = high-stakes (exec/board-reported or cross-domain metric).
 #       Requires Responsible + Accountable owners, mandatory quality
@@ -198,7 +198,7 @@ metrics:
       owner: finance_team
       tier: 1
       responsible: finance-analytics@freenow.com
-      accountable: "head-of-data-enablement@freenow.com
+      accountable: head-of-data-enablement@freenow.com
       consulted: marketplace_team
       informed: exec-reporting
 
